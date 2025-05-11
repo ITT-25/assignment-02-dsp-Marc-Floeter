@@ -8,6 +8,7 @@ CHUNK_SIZE = 1024  # Number of audio frames per buffer
 FORMAT = pyaudio.paInt16  # Audio format
 CHANNELS = 1  # Mono audio
 RATE = 44100  # Audio sampling rate (Hz)
+VOLUME_THRESHOLD = 100
 p = pyaudio.PyAudio()
 
 # print info about audio devices
@@ -39,15 +40,47 @@ ax.set_ylim(-30000, 30000)
 plt.ion()
 plt.show()
 
-# continuously capture and plot audio singal
-while True:
-    # Read audio data from stream
-    data = stream.read(CHUNK_SIZE)
+# Funktion zur Berechnung der Frequenz
+def get_dominant_frequency(data, rate):
+    # Berechne die FFT des Audiosignals
+    fft_data = np.fft.fft(data)
+    freqs = np.fft.fftfreq(len(data), 1 / rate)
 
-    # Convert audio data to numpy array
-    data = np.frombuffer(data, dtype=np.int16)
-    line.set_ydata(data)
+    # Nur positive Frequenzen berücksichtigen (erste Hälfte)
+    positive_freqs = freqs[:len(freqs)//2]
+    fft_magnitude = np.abs(fft_data[:len(fft_data)//2])
 
-    # Redraw plot
-    fig.canvas.draw()
-    fig.canvas.flush_events()
+    # Finde die Frequenz mit der größten Amplitude
+    dominant_freq = positive_freqs[np.argmax(fft_magnitude)]
+    return dominant_freq
+
+# continuously capture and plot audio signal
+try:
+    while True:
+        # Read audio data from input stream
+        data = stream.read(CHUNK_SIZE)
+
+        # Convert audio data to numpy array
+        audio_data = np.frombuffer(data, dtype=np.int16)
+
+        # Update the plot
+        line.set_ydata(audio_data)
+
+        # Berechne den Lautstärkepegel des Signals (RMS-Wert)
+        rms = np.sqrt(np.mean(np.square(audio_data)))
+
+        # Wenn die Lautstärke über dem Schwellenwert liegt, berechne die Frequenz
+        if rms > VOLUME_THRESHOLD:
+            dominant_frequency = get_dominant_frequency(audio_data, RATE)
+            print(f"Dominante Frequenz: {dominant_frequency:.2f} Hz")
+        else:
+            print("Kein Signal über dem Schwellenwert.")
+        
+        # Redraw plot
+        fig.canvas.draw()
+        fig.canvas.flush_events()
+
+except KeyboardInterrupt:
+    stream.stop_stream()
+    stream.close()
+    p.terminate()

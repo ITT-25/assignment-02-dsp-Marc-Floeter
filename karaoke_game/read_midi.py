@@ -1,20 +1,13 @@
 import mido
 from mido import MidiFile
 
-MIDI_FILE = mido.MidiFile('freude.mid')
-
-def main():
-    frequencies = midi_to_timecoded_frequencies()
-    for start, end, freq in frequencies:
-        duration = end - start
-        print(f"{freq:.2f} Hz  | Start: {start:.2f}s  | Dauer: {duration:.2f}s")
-
-def midi_to_timecoded_frequencies():
+def midi_to_timecoded_frequencies(midi_file_path):
+    midi_file = mido.MidiFile(midi_file_path)
     frequencies_timecoded = [] # Liste der Noten bestehend aus Frequenz, Start- und Endzeitpunkt
     notes_started = {} # Temporäre Liste gestarteter Noten, deren Ende noch nicht bekannt ist
     current_time = 0
 
-    for msg in MIDI_FILE:
+    for msg in midi_file:
         current_time += msg.time
         # Note aktiviert
         if msg.type == "note_on" and msg.velocity > 0:
@@ -33,6 +26,3 @@ def midi_to_timecoded_frequencies():
 
 def midi_note_to_frequency(note):
     return 440.0 * 2 ** ((note - 69) / 12)
-
-if __name__ == "__main__":
-    main()
