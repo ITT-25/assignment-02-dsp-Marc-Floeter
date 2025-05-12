@@ -8,7 +8,7 @@
 
 import read_midi
 import pygame.midi, mido
-import time, threading
+import time, threading, sys
 
 SONG_MIDI_PATH = 'Songs/freude.mid'
 TIMING_DEVIATION_TOLERANCE = 100 # in ms
@@ -20,8 +20,8 @@ prepared_song = []
 note_starts = []
 note_ends = []
 song_notes_to_sing = []
-song_notes_too_early = []
-song_notes_too_late = [] 
+sung_note = 261
+score = 0
 
 game_state = "start"
 
@@ -70,34 +70,53 @@ def add_time_to_next_note_end(song):
     return song_with_time_to_next_note_end
 
 def play_song():
+    global game_state
+
+    game_state = "play"
+
     add_thread = threading.Thread(target = add_notes_to_sing)
     remove_thread = threading.Thread(target = remove_notes_to_sing)
     midi_thread = threading.Thread(target = play_midi_file)
+    evaluation_thread = threading.Thread(target = evaluate_audio_input)
 
     midi_thread.start()
     add_thread.start()
     remove_thread.start()
+    evaluation_thread.start()
+
+    exit_threads()
 
     add_thread.join()
     remove_thread.join()
+    midi_thread.join()
+    evaluation_thread.join()
 
 def add_notes_to_sing():
     start_time = time.time()
     for note in note_starts:
+        if game_state != "play":
+            return
         while time.time() - start_time < note[1]:
             time.sleep(0.0001)
         song_notes_to_sing.append(note)
         print(f"START: {note}")
 
 def remove_notes_to_sing():
-    start_time = time.time()
-    for note in note_ends:
-        while time.time() - start_time < note[1]:
-            time.sleep(0.0001)
-        matching_note = next((n for n in song_notes_to_sing if n[0] == note[0]), None)
-        if matching_note:
-            song_notes_to_sing.remove(matching_note)
-            #print(f"END: {note}")
+    global game_state
+    while game_state == "play":
+
+        start_time = time.time()
+        for note in note_ends:
+            if game_state != "play":
+                return
+            while time.time() - start_time < note[1]:
+                time.sleep(0.0001)
+            matching_note = next((n for n in song_notes_to_sing if n[0] == note[0]), None)
+            if matching_note:
+                song_notes_to_sing.remove(matching_note)
+                #print(f"END: {note}")
+        game_state = "end"
+        print("PROZENT RICHTIG: " + str(score / note_ends[len(note_ends) - 1][1]))
 
 def play_midi_file():
     pygame.midi.init()
@@ -106,6 +125,8 @@ def play_midi_file():
     current_time = 0
 
     for msg in midi_file:
+        if game_state != "play":
+            return
         current_time += msg.time
         time.sleep(msg.time)
 
@@ -116,6 +137,30 @@ def play_midi_file():
 
     player.close()
     pygame.midi.quit()
+
+def evaluate_audio_input():
+    global score
+
+    while game_state == "play":
+        matching_note = next((n for n in song_notes_to_sing if abs(n[2] - sung_note) <= FREQUENCY_DEVIATION_TOLERANCE), None)
+        if matching_note:
+            score += 1
+            print(score)
+        time.sleep(0.01)
+
+def exit_threads():
+    global game_state
+
+    while game_state == "play":
+        try:
+            if game_state != "play":
+                break
+
+        except KeyboardInterrupt:
+            print("Abbruch")
+            game_state = "exit"
+            sys.exit()
+
 
 if __name__ == "__main__":
     main()

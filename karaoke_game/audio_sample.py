@@ -8,7 +8,7 @@ CHUNK_SIZE = 1024  # Number of audio frames per buffer
 FORMAT = pyaudio.paInt16  # Audio format
 CHANNELS = 1  # Mono audio
 RATE = 44100  # Audio sampling rate (Hz)
-VOLUME_THRESHOLD = 100
+VOLUME_THRESHOLD = 50
 p = pyaudio.PyAudio()
 
 # print info about audio devices
@@ -35,6 +35,7 @@ stream = p.open(format=FORMAT,
 fig = plt.figure()
 ax = plt.gca()
 line, = ax.plot(np.zeros(CHUNK_SIZE))
+ax.axhline(VOLUME_THRESHOLD, color='r', linestyle='--', label="Schwellwert")
 ax.set_ylim(-30000, 30000)
 
 plt.ion()
@@ -57,6 +58,7 @@ def get_dominant_frequency(data, rate):
 # continuously capture and plot audio signal
 try:
     while True:
+        
         # Read audio data from input stream
         data = stream.read(CHUNK_SIZE)
 
@@ -72,9 +74,10 @@ try:
         # Wenn die Lautstärke über dem Schwellenwert liegt, berechne die Frequenz
         if rms > VOLUME_THRESHOLD:
             dominant_frequency = get_dominant_frequency(audio_data, RATE)
+            print(f"RMS: {rms:.2f}")
             print(f"Dominante Frequenz: {dominant_frequency:.2f} Hz")
-        else:
-            print("Kein Signal über dem Schwellenwert.")
+        #else:
+           # print("Kein Signal über dem Schwellenwert.")
         
         # Redraw plot
         fig.canvas.draw()
