@@ -9,11 +9,24 @@
 import read_midi
 import pygame.midi, mido
 import time, threading, sys
+import pyglet
+from pyglet import window, shapes
 
 SONG_MIDI_PATH = 'Songs/freude.mid'
 TIMING_DEVIATION_TOLERANCE = 100 # in ms
 TIMING_RECOGNITION_TOLERANCE = 100 # in ms
 FREQUENCY_DEVIATION_TOLERANCE = 3 # in Hz
+
+WINDOW_WIDTH = 800
+WINDOW_HEIGHT = 600
+
+PLAYER_SIZE = WINDOW_HEIGHT // 10
+PLAYER_COLOR = (0, 0, 255)
+
+NOTE_HEIGHT = WINDOW_HEIGHT // 10
+NOTE_COLOR = (255, 0, 0)
+
+win = window.Window(WINDOW_WIDTH, WINDOW_HEIGHT)
 
 song = []
 prepared_song = []
@@ -25,8 +38,19 @@ score = 0
 
 game_state = "start"
 
-def main():
-    prepare_song()
+class Player:
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.sprite = shapes.Rectangle(self.x, self.y, PLAYER_SIZE, PLAYER_SIZE, PLAYER_COLOR)
+
+class Note:
+    def __init__(self):
+        self.x = 0
+        self.y = 0
+        self.sprite = shapes.Rectangle(self.x, self.y, NOTE_HEIGHT, NOTE_HEIGHT, NOTE_COLOR)
+
+player = Player() 
 
 def prepare_song():
     global song, prepared_song, note_starts, note_ends
@@ -74,22 +98,10 @@ def play_song():
 
     game_state = "play"
 
-    add_thread = threading.Thread(target = add_notes_to_sing)
-    remove_thread = threading.Thread(target = remove_notes_to_sing)
-    midi_thread = threading.Thread(target = play_midi_file)
-    evaluation_thread = threading.Thread(target = evaluate_audio_input)
-
-    midi_thread.start()
-    add_thread.start()
-    remove_thread.start()
-    evaluation_thread.start()
-
-    exit_threads()
-
-    add_thread.join()
-    remove_thread.join()
-    midi_thread.join()
-    evaluation_thread.join()
+    threading.Thread(target = add_notes_to_sing, daemon=True).start()
+    threading.Thread(target = remove_notes_to_sing, daemon=True).start()
+    threading.Thread(target = play_midi_file, daemon=True).start()
+    threading.Thread(target = evaluate_audio_input, daemon=True).start()
 
 def add_notes_to_sing():
     start_time = time.time()
@@ -119,6 +131,7 @@ def remove_notes_to_sing():
         print("PROZENT RICHTIG: " + str(score / note_ends[len(note_ends) - 1][1]))
 
 def play_midi_file():
+    print("play midi")
     pygame.midi.init()
     player = pygame.midi.Output(0)
     midi_file = mido.MidiFile(SONG_MIDI_PATH)
@@ -148,19 +161,14 @@ def evaluate_audio_input():
             print(score)
         time.sleep(0.01)
 
-def exit_threads():
-    global game_state
+@win.event
+def on_draw():
+    win.clear()
+    player.sprite.draw()
 
-    while game_state == "play":
-        try:
-            if game_state != "play":
-                break
-
-        except KeyboardInterrupt:
-            print("Abbruch")
-            game_state = "exit"
-            sys.exit()
-
+def main():
+    prepare_song()
+    pyglet.app.run()
 
 if __name__ == "__main__":
     main()
