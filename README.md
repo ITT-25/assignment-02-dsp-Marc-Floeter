@@ -5,7 +5,7 @@
 - Navigiere in den Ordner `whistle_input`
 - (Erstelle und) starte dann Virtual Environment mittels `venv\scripts\activate`
 - Installiere ggf. Abhängigkeiten mit `pip install -r requirements.txt`
-- Starte Anwendung mit `python whistle_input.py`
+- Starte Anwendung mit `python whistle-input.py`
 - Wähle Audio Eingabegerät per Konsoleneingabe
 - Pfeif!
 
@@ -17,7 +17,7 @@ Durch pfeifen kann man sowohl die Auswahl im Raster des Testprogramms steuern, a
 - Navigiere in den Ordner `karaoke_game`
 - (Erstelle und) starte dann Virtual Environment mittels `venv\scripts\activate`
 - Installiere ggf. Abhängigkeiten mit `pip install -r requirements.txt`
-- Starte Spiel mit `python karaoke_game.py`
+- Starte Spiel mit `python karaoke.py`
 - Wähle Audio Eingabegerät per Konsoleneingabe
 - Gib Pfad zu gewünschter MIDI-Datei an
 - Sing! (oder so)
