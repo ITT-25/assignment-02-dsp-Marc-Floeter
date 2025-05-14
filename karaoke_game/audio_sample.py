@@ -8,7 +8,7 @@ CHUNK_SIZE = 1024  # Number of audio frames per buffer
 FORMAT = pyaudio.paInt16  # Audio format
 CHANNELS = 1  # Mono audio
 RATE = 44100  # Audio sampling rate (Hz)
-VOLUME_THRESHOLD = 20
+VOLUME_THRESHOLD = 50
 p = pyaudio.PyAudio()
 
 # print info about audio devices
@@ -41,19 +41,21 @@ ax.set_ylim(-30000, 30000)
 plt.ion()
 plt.show()'''
 
+
 # Berechnung der lautesten (dominantesten) Frequenz
 def get_dominant_frequency(data, rate):
-    # Berechne die FFT des Audiosignals
+    # Berechnet die FFT des Audiosignals
     fft_data = np.fft.fft(data)
     freqs = np.fft.fftfreq(len(data), 1 / rate)
 
-    # Nur positive Frequenzen berücksichtigen (erste Hälfte)
+    # Nur positive Frequenzen (erste Hälfte)
     positive_freqs = freqs[:len(freqs)//2]
     fft_magnitude = np.abs(fft_data[:len(fft_data)//2])
 
-    # Finde die Frequenz mit der größten Amplitude
+    # Frequenz mit der größten Amplitude
     dominant_freq = positive_freqs[np.argmax(fft_magnitude)]
     return dominant_freq
+
 
 # Ausgabe der lautesten Frequenz aus aktuellem Audio-Stream
 def get_audio_signal():
@@ -73,19 +75,21 @@ def get_audio_signal():
     if rms > VOLUME_THRESHOLD:
         dominant_frequency = get_dominant_frequency(audio_data, RATE)
         #print(f"RMS: {rms:.2f}")
-        print(f"Dominante Frequenz: {dominant_frequency:.2f} Hz")
+        #print(f"Dominante Frequenz: {dominant_frequency:.2f} Hz")
         return dominant_frequency
     else:
-        print("Kein Signal über dem Schwellwert")
+        #print("Kein Signal über dem Schwellwert")
         return 0
     
     '''# Redraw plot
     fig.canvas.draw()
     fig.canvas.flush_events()'''
 
+
 def main():
     while True:
         get_audio_signal()
+
 
 if __name__ == "__main__":
     main()

@@ -29,6 +29,7 @@ def midi_to_timecoded_frequencies(midi_file_path):
 def midi_note_to_frequency(note):
     return 440.0 * 2 ** ((note - 69) / 12)
 
+# Fügt Pausen im Song als Noten mit Frequenz 0 hinzu 
 def insert_pauses(frequencies_timecoded):
     frequencies_timecoded_with_pauses = []
     last_end = 0
